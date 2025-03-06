@@ -1,7 +1,16 @@
 package main
 
-import "fmt"
+import (
+    "log"
+    "fmt"
+    "kaam/db"
+) 
+
 
 func main() {
-    fmt.Println("hi there!")
+    _, err := db.InitDB()
+    if err != nil {
+        log.Fatal("Failed to initialise database: ", err)
+    }
+    fmt.Println("Connected to database successfully!")
 }
