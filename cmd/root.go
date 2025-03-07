@@ -67,7 +67,6 @@ func Execute() {
     if err := db.InitDB(); err != nil {
         log.Fatal("Failed to initialise database: ", err)
     }
-    fmt.Println("Connected to database successfully!")
     defer db.CloseDB()
 
     if err := rootCmd.Execute(); err != nil {

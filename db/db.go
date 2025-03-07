@@ -3,8 +3,11 @@ package db
 import (
     "database/sql"
     "os"
+    "fmt"
+    "errors"
     "path/filepath"
-    _ "modernc.org/sqlite"
+    "modernc.org/sqlite"
+    "modernc.org/sqlite/lib"
     "kaam/models"
 )
 
@@ -29,7 +32,7 @@ func InitDB() error {
 
     _, err = database.Exec(`CREATE TABLE IF NOT EXISTS tasks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
+        title TEXT NOT NULL UNIQUE,
         time_spent INTEGER NOT NULL DEFAULT 0,
         last_started_at INTEGER NOT NULL DEFAULT 0,
         status TEXT NOT NULL DEFAULT 'TODO'
@@ -60,6 +63,26 @@ func GetAllTasks() ([]models.Task, error) {
 
     return tasks, nil
 }
+
+func AddTask(task models.Task) error {
+    statement, err := database.Prepare("INSERT INTO tasks (title, time_spent, last_started_at, status) VALUES (?, ?, ?, ?)")
+    if err != nil {
+        return err
+    }
+    defer statement.Close()
+    
+    _, err = statement.Exec(task.Title, task.TimeSpent, task.LastStartedAt, task.Status)
+    if err != nil {
+        var sqliteErr *sqlite.Error
+        if errors.As(err, &sqliteErr) && sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
+            return fmt.Errorf("\nTask with title \"%s\" already exists", task.Title)
+        }
+        return fmt.Errorf("Failed to execute statement: %w", err)
+    }
+
+    return nil
+}
+
 func CloseDB() error {
     if database == nil {
         return nil
